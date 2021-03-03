@@ -1,10 +1,9 @@
-package models
+package snp
 
 import (
 	"time"
 )
 
-// Snippet ...
 type Snippet struct {
 	ID      int
 	Title   string

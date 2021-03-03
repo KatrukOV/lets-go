@@ -14,18 +14,18 @@ func (app *App) Routes() http.Handler {
 	// mux := http.NewServeMux()
 
 	mux.Get("/", NoSurf(app.Home))
-	mux.Get("/snippet/new", app.RequireLogin(NoSurf(app.NewSnippet)))
+	mux.Get("/snippet/new", app.RequireLogin(NoSurf(app.NewSnippetView)))
 	mux.Post("/snippet/new", app.RequireLogin(NoSurf(app.CreateSnippet)))
 	mux.Get("/snippet/:id", NoSurf(app.ShowSnippet))
 
-	// Application Routes [User]
-	mux.Get("/user/signup", NoSurf(app.SignupUser))
-	mux.Post("/user/signup", NoSurf(app.CreateUser))
-	mux.Get("/user/login", NoSurf(app.LoginUser))
-	mux.Post("/user/login", NoSurf(app.VerifyUser))
+	// Application Routes [userUseCase]
+	mux.Get("/user/signup", NoSurf(app.SignupUserView))
+	mux.Post("/user/signup", NoSurf(app.SignupUser))
+	mux.Get("/user/login", NoSurf(app.SigninUserView))
+	mux.Post("/user/login", NoSurf(app.SignInUser))
 	mux.Post("/user/logout", app.RequireLogin(NoSurf(app.LogoutUser)))
 
-	fileServer := http.FileServer(http.Dir(app.StaticDir))
+	fileServer := http.FileServer(http.Dir(app.Config.StaticDir()))
 
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 

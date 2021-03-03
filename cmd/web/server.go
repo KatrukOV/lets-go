@@ -17,8 +17,8 @@ func (app *App) RunServer() {
 	//}
 
 	srv := &http.Server{
-		Addr:           app.Addr,
-		Handler:        app.Routes(),
+		Addr:    app.Config.Addr(),
+		Handler: app.Routes(),
 		//TLSConfig:      tlsConfig,
 		IdleTimeout:    time.Minute,
 		ReadTimeout:    5 * time.Second,
@@ -26,7 +26,7 @@ func (app *App) RunServer() {
 		MaxHeaderBytes: 524288,
 	}
 
-	log.Printf("Starting server on %s", app.Addr)
+	log.Printf("Starting server on %s", app.Config.Addr())
 	err := srv.ListenAndServe()
 	log.Fatal(err)
 

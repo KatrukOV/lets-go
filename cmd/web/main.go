@@ -1,62 +1,26 @@
 package main
 
 import (
-	"database/sql"
-	"flag"
+	"github.com/alexedwards/scs"
+	"github.com/andrii-minchekov/lets-go/app/impl"
+	_ "github.com/lib/pq"
 	"log"
 	"time"
-
-	"github.com/alexedwards/scs"
-	"github.com/andrii-minchekov/lets-go/pkg/models"
-	_ "github.com/lib/pq"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn", "user=postgres dbname=snippetbox password=postgres sslmode=disable", "Postgres Datasource Name")
-	secret := flag.String("secret", "s6Nd%+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret key")
-	htmlDir := flag.String("html-dir", "./ui/html", "Path to HTML templates")
-	staticDir := flag.String("static-dir", "./ui/static", "Path to static assets")
-	//tlsCert := flag.String("tls-cert", "./tls/cert.pem", "Path to TLS certificate")
-	//tlsKey := flag.String("tls-key", "./tls/key.pem", "Path to TLS key")
-
-	flag.Parse()
-
-	db := connect(*dsn)
-	defer db.Close()
+	config := impl.NewFlagConfig()
 
 	// Initialize the Session Store
-	sessionManager := scs.NewCookieManager(*secret)
+	sessionManager := scs.NewCookieManager(config.Secret())
 	sessionManager.Lifetime(12 * time.Hour)
 	sessionManager.Persist(true)
 
-	// Initialize a new instance of App containing the dependencies.
 	app := &App{
-		Database:  &models.Database{db},
-		HTMLDir:   *htmlDir,
-		StaticDir: *staticDir,
-		Sessions:  sessionManager,
-		Addr:      *addr,
-		//TLSCert:   *tlsCert,
-		//TLSKey:    *tlsKey,
+		Config:   config,
+		Cases:    impl.NewComposedUseCases(config),
+		Sessions: sessionManager,
 	}
-
 	app.RunServer()
-}
-
-func connect(dsn string) *sql.DB {
-
-	db, err := sql.Open("postgres", dsn)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-
 }

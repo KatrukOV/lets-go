@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/andrii-minchekov/lets-go/domain/snippet"
 	"html/template"
 	"log"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/justinas/nosurf"
-	"github.com/andrii-minchekov/lets-go/pkg/models"
 )
 
 func humanDate(t time.Time) string {
@@ -23,8 +23,8 @@ type HTMLData struct {
 	Form      interface{}
 	LoggedIn  bool
 	Path      string
-	Snippet   *models.Snippet
-	Snippets  []*models.Snippet
+	Snippet   *snp.Snippet
+	Snippets  []*snp.Snippet
 }
 
 // RenderHTML ...
@@ -49,8 +49,8 @@ func (app *App) RenderHTML(w http.ResponseWriter, r *http.Request, page string, 
 	}
 
 	files := []string{
-		filepath.Join(app.HTMLDir, "base.html"),
-		filepath.Join(app.HTMLDir, page),
+		filepath.Join(app.Config.HTMLDir(), "base.html"),
+		filepath.Join(app.Config.HTMLDir(), page),
 	}
 
 	// Initialize a template function map object. This is a map

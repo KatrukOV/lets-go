@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/andrii-minchekov/lets-go/domain/snippet"
+	"github.com/andrii-minchekov/lets-go/domain/user"
 	"net/http"
 	"strconv"
 
-	"github.com/andrii-minchekov/lets-go/pkg/forms"
-	"github.com/andrii-minchekov/lets-go/pkg/models"
+	"github.com/andrii-minchekov/lets-go/cmd/web/forms"
 )
 
 // Home Display a "Hello from Snippetbox" message
@@ -17,7 +18,7 @@ func (app *App) Home(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	snippets, err := app.Database.LatestSnippets()
+	snippets, err := app.Cases.LatestSnippets()
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -40,7 +41,7 @@ func (app *App) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippet, err := app.Database.GetSnippet(id)
+	snippet, err := app.Cases.GetSnippet(id)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -66,8 +67,8 @@ func (app *App) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// NewSnippet ...
-func (app *App) NewSnippet(w http.ResponseWriter, r *http.Request) {
+// NewSnippetView ...
+func (app *App) NewSnippetView(w http.ResponseWriter, r *http.Request) {
 	app.RenderHTML(w, r, "new.page.html", &HTMLData{
 		Form: &forms.NewSnippet{},
 	})
@@ -96,7 +97,10 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.Database.InsertSnippet(form.Title, form.Content)
+	id, err := app.Cases.CreateSnippet(snp.Snippet{
+		Title:   form.Title,
+		Content: form.Content,
+	})
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -116,15 +120,15 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// SignupUser ...
-func (app *App) SignupUser(w http.ResponseWriter, r *http.Request) {
+// SignupUserView ...
+func (app *App) SignupUserView(w http.ResponseWriter, r *http.Request) {
 	app.RenderHTML(w, r, "signup.page.html", &HTMLData{
 		Form: &forms.SignupUser{},
 	})
 }
 
-// CreateUser ...
-func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
+// SignupUser ...
+func (app *App) SignupUser(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 
@@ -144,7 +148,11 @@ func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.Database.InsertUser(form.Name, form.Email, form.Password)
+	_, err = app.Cases.SignupUser(usr.User{
+		Name:     form.Name,
+		Email:    form.Email,
+		Password: form.Password,
+	})
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -164,8 +172,8 @@ func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// LoginUser ...
-func (app *App) LoginUser(w http.ResponseWriter, r *http.Request) {
+// SigninUserView ...
+func (app *App) SigninUserView(w http.ResponseWriter, r *http.Request) {
 
 	session := app.Sessions.Load(r)
 
@@ -181,8 +189,8 @@ func (app *App) LoginUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// VerifyUser ...
-func (app *App) VerifyUser(w http.ResponseWriter, r *http.Request) {
+// SignInUser ...
+func (app *App) SignInUser(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
@@ -200,9 +208,9 @@ func (app *App) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUserID, err := app.Database.VerifyUser(form.Email, form.Password)
+	currentUserID, err := app.Cases.SignInUser(form.Email, form.Password)
 
-	if err == models.ErrInvalidCredentials {
+	if err == usr.ErrInvalidCredentials {
 		form.Failures["Generic"] = "Email or Password is incorrect"
 		app.RenderHTML(w, r, "login.page.html", &HTMLData{Form: form})
 		return
