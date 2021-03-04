@@ -5,8 +5,8 @@ create table if not exists snippets
             primary key,
     title text not null,
     content text not null,
-    created date not null,
-    expires date
+    created timestamp not null,
+    expires timestamp
 );
 
 create unique index if not exists snippets_title_uindex
@@ -20,7 +20,7 @@ create table if not exists users
     name text not null,
     email text not null,
     password text not null,
-    created date not null
+    created timestamp not null
 );
 
 create unique index if not exists users_email_uindex

@@ -34,7 +34,7 @@ func (app *App) RequireLogin(next http.Handler) http.Handler {
 		}
 
 		if !loggedIn {
-			http.Redirect(w, r, "/user/login", 302)
+			http.Redirect(w, r, "/user/login", http.StatusFound)
 			return
 		}
 

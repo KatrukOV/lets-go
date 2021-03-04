@@ -17,7 +17,7 @@ func (app *App) Home(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	snippets, err := app.Database.LatestSnippets()
+	snippets, err := app.Database.GetUpTo10LatestSnippets()
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -96,7 +96,7 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.Database.InsertSnippet(form.Title, form.Content)
+	id, err := app.Database.InsertSnippet(form.Title, form.Content, form.Expires)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -112,7 +112,23 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusCreated)
+
+}
+
+// Get all Snippets ...
+func (app *App) AllSnippets(w http.ResponseWriter, r *http.Request) {
+
+	snippets, err := app.Database.GetAllSnippets()
+
+	if err != nil {
+		app.ServerError(w, err)
+		return
+	}
+
+	app.RenderHTML(w, r, "home.page.html", &HTMLData{
+		Snippets: snippets,
+	})
 
 }
 
@@ -213,14 +229,14 @@ func (app *App) VerifyUser(w http.ResponseWriter, r *http.Request) {
 
 	// Add the ID of the current user to the session
 	session := app.Sessions.Load(r)
-	err = session.PutInt(w, "currentUserID", currentUserID)
+	err = session.PutInt(w, CURRENT_USER_ID, currentUserID)
 
 	if err != nil {
 		app.ServerError(w, err)
 		return
 	}
 
-	http.Redirect(w, r, "/snippet/new", http.StatusSeeOther)
+	http.Redirect(w, r, "/snippet/new", http.StatusFound)
 
 }
 
@@ -229,7 +245,7 @@ func (app *App) LogoutUser(w http.ResponseWriter, r *http.Request) {
 
 	// Remove the currentUserID from the session data.
 	session := app.Sessions.Load(r)
-	err := session.Remove(w, "currentUserID")
+	err := session.Remove(w, CURRENT_USER_ID)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -238,5 +254,6 @@ func (app *App) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect the user to the homepage.
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/", http.StatusResetContent)
+
 }
