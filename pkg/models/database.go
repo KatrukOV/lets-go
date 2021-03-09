@@ -84,13 +84,15 @@ func (db *Database) GetUpTo10LatestSnippets() (Snippets, error) {
 }
 
 // GetAllSnippets ...
-func (db *Database) GetAllSnippets() (Snippets, error) {
+func (db *Database) GetAllSnippets(limit, offset int64) (Snippets, error) {
 
 	stmt := `SELECT id, title, content, created, expires FROM snippets
 	WHERE expires > CURRENT_TIMESTAMP 
-	ORDER BY created DESC`
+	ORDER BY created DESC 
+	LIMIT $1 
+	OFFSET $2`
 
-	rows, err := db.Query(stmt)
+	rows, err := db.Query(stmt, limit, offset)
 
 	if err != nil {
 		return nil, err
@@ -122,7 +124,7 @@ func (db *Database) GetAllSnippets() (Snippets, error) {
 // GetSnippet ...
 func (db *Database) GetSnippet(id int) (*Snippet, error) {
 
-	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > CURRENT_DATE AND id = $1`
+	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > CURRENT_TIMESTAMP AND id = $1`
 
 	row := db.QueryRow(stmt, id)
 
@@ -150,7 +152,7 @@ func (db *Database) InsertUser(name, email, password string) error {
 		return err
 	}
 
-	stmt := "INSERT INTO users (name, email, password, created) VALUES ($1, $2, $3, CURRENT_DATE)"
+	stmt := "INSERT INTO users (name, email, password, created) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)"
 
 	_, err = db.Exec(stmt, name, email, string(hashedPassword))
 

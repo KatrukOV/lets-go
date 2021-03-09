@@ -14,3 +14,16 @@ type Snippet struct {
 }
 
 type Snippets []*Snippet
+
+// User ...
+type UserCreate struct {
+	Name     string
+	Email    string
+	Password string
+}
+
+// UserLogin
+type UserLogin struct {
+	Email    string
+	Password string
+}

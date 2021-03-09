@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -119,16 +120,21 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 // Get all Snippets ...
 func (app *App) AllSnippets(w http.ResponseWriter, r *http.Request) {
 
-	snippets, err := app.Database.GetAllSnippets()
+	limitStr, _ := r.URL.Query()["limit"]
+	offsetStr, _ := r.URL.Query()["offset"]
+
+	limit, _ := strconv.ParseInt(limitStr[0], 10, 64)
+	offset, _ := strconv.ParseInt(offsetStr[0], 10, 64)
+
+	snippets, err := app.Database.GetAllSnippets(limit, offset)
 
 	if err != nil {
 		app.ServerError(w, err)
 		return
 	}
 
-	app.RenderHTML(w, r, "home.page.html", &HTMLData{
-		Snippets: snippets,
-	})
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(snippets)
 
 }
 
@@ -139,8 +145,8 @@ func (app *App) SignupUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// CreateUser ...
-func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
+// Signup ...
+func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 
@@ -180,8 +186,54 @@ func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// LoginUser ...
+// Create user
+func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
+
+	var user models.UserCreate
+	err := json.NewDecoder(r.Body).Decode(&user)
+
+	if err != nil {
+		app.ClientError(w, http.StatusBadRequest)
+		return
+	}
+
+	err = app.Database.InsertUser(user.Name, user.Email, user.Password)
+
+	if err != nil {
+		app.ServerError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
+
+}
+
+// Login User
 func (app *App) LoginUser(w http.ResponseWriter, r *http.Request) {
+
+	var userLogin models.UserLogin
+	err := json.NewDecoder(r.Body).Decode(&userLogin)
+
+	if err != nil {
+		app.ClientError(w, http.StatusUnprocessableEntity)
+		return
+	}
+	_, err1 := app.Database.VerifyUser(userLogin.Email, userLogin.Password)
+
+	if err1 != nil {
+		app.ClientError(w, http.StatusAccepted)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+}
+
+// Signin ...
+func (app *App) Signin(w http.ResponseWriter, r *http.Request) {
 
 	session := app.Sessions.Load(r)
 
