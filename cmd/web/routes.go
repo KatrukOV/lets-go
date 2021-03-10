@@ -20,8 +20,8 @@ func (app *App) Routes() http.Handler {
 	mux.Get("/snippet/:id", NoSurf(app.ShowSnippet))
 
 	// Application Routes [User]
-	mux.Post("/users", NoSurf(app.CreateUser))
-	mux.Post("/sessions", NoSurf(app.LoginUser))
+	mux.Post("/users", http.HandlerFunc(app.CreateUser))
+	mux.Post("/sessions", http.HandlerFunc(app.LoginUser))
 	mux.Get("/user/signup", NoSurf(app.SignupUser))
 	mux.Post("/user/signup", NoSurf(app.Signup))
 	mux.Get("/user/login", NoSurf(app.Signin))
