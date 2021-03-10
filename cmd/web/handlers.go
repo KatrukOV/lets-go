@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -17,7 +18,7 @@ func (app *App) Home(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	snippets, err := app.Database.LatestSnippets()
+	snippets, err := app.Database.GetUpTo10LatestSnippets()
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -96,7 +97,7 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.Database.InsertSnippet(form.Title, form.Content)
+	id, err := app.Database.InsertSnippet(form.Title, form.Content, form.Expires)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -112,7 +113,28 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusCreated)
+
+}
+
+// Get all Snippets ...
+func (app *App) AllSnippets(w http.ResponseWriter, r *http.Request) {
+
+	limitStr, _ := r.URL.Query()["limit"]
+	offsetStr, _ := r.URL.Query()["offset"]
+
+	limit, _ := strconv.ParseInt(limitStr[0], 10, 64)
+	offset, _ := strconv.ParseInt(offsetStr[0], 10, 64)
+
+	snippets, err := app.Database.GetAllSnippets(limit, offset)
+
+	if err != nil {
+		app.ServerError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(snippets)
 
 }
 
@@ -123,8 +145,8 @@ func (app *App) SignupUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// CreateUser ...
-func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
+// Signup ...
+func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 
@@ -164,8 +186,54 @@ func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// LoginUser ...
+// Create user
+func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
+
+	var user models.UserCreate
+	err := json.NewDecoder(r.Body).Decode(&user)
+
+	if err != nil {
+		app.ClientError(w, http.StatusBadRequest)
+		return
+	}
+
+	err = app.Database.InsertUser(user.Name, user.Email, user.Password)
+
+	if err != nil {
+		app.ServerError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
+
+}
+
+// Login User
 func (app *App) LoginUser(w http.ResponseWriter, r *http.Request) {
+
+	var userLogin models.UserLogin
+	err := json.NewDecoder(r.Body).Decode(&userLogin)
+
+	if err != nil {
+		app.ClientError(w, http.StatusUnprocessableEntity)
+		return
+	}
+	_, err1 := app.Database.VerifyUser(userLogin.Email, userLogin.Password)
+
+	if err1 != nil {
+		app.ClientError(w, http.StatusAccepted)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+}
+
+// Signin ...
+func (app *App) Signin(w http.ResponseWriter, r *http.Request) {
 
 	session := app.Sessions.Load(r)
 
@@ -213,14 +281,14 @@ func (app *App) VerifyUser(w http.ResponseWriter, r *http.Request) {
 
 	// Add the ID of the current user to the session
 	session := app.Sessions.Load(r)
-	err = session.PutInt(w, "currentUserID", currentUserID)
+	err = session.PutInt(w, CURRENT_USER_ID, currentUserID)
 
 	if err != nil {
 		app.ServerError(w, err)
 		return
 	}
 
-	http.Redirect(w, r, "/snippet/new", http.StatusSeeOther)
+	http.Redirect(w, r, "/snippet/new", http.StatusFound)
 
 }
 
@@ -229,7 +297,7 @@ func (app *App) LogoutUser(w http.ResponseWriter, r *http.Request) {
 
 	// Remove the currentUserID from the session data.
 	session := app.Sessions.Load(r)
-	err := session.Remove(w, "currentUserID")
+	err := session.Remove(w, CURRENT_USER_ID)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -238,5 +306,6 @@ func (app *App) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect the user to the homepage.
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/", http.StatusResetContent)
+
 }

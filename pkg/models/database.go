@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,12 +19,13 @@ type Database struct {
 }
 
 // InsertSnippet ...
-func (db *Database) InsertSnippet(title, content string) (int, error) {
+func (db *Database) InsertSnippet(title, content, expires string) (int, error) {
 
 	stmt := `INSERT INTO snippets (title, content, created, expires) 
-	VALUES($1, $2, CURRENT_DATE, CURRENT_DATE + INTERVAL '100000 seconds') returning id`
+	VALUES($1, $2, $3, $4) returning id`
 
-	result, err := db.Query(stmt, title, content)
+	duration, err := time.ParseDuration(expires + "s")
+	result, err := db.Query(stmt, title, content, time.Now(), time.Now().Add(duration))
 
 	if err != nil {
 		return 0, err
@@ -41,11 +43,11 @@ func (db *Database) InsertSnippet(title, content string) (int, error) {
 
 }
 
-// LatestSnippets ...
-func (db *Database) LatestSnippets() (Snippets, error) {
+// GetUpTo10LatestSnippets ...
+func (db *Database) GetUpTo10LatestSnippets() (Snippets, error) {
 
 	stmt := `SELECT id, title, content, created, expires FROM snippets
-	WHERE expires > CURRENT_DATE ORDER BY created DESC LIMIT 10`
+	WHERE expires > CURRENT_TIMESTAMP ORDER BY created DESC LIMIT 10`
 
 	rows, err := db.Query(stmt)
 
@@ -81,10 +83,48 @@ func (db *Database) LatestSnippets() (Snippets, error) {
 
 }
 
+// GetAllSnippets ...
+func (db *Database) GetAllSnippets(limit, offset int64) (Snippets, error) {
+
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+	WHERE expires > CURRENT_TIMESTAMP 
+	ORDER BY created DESC 
+	LIMIT $1 
+	OFFSET $2`
+
+	rows, err := db.Query(stmt, limit, offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// This should come after we check for an error
+	// or the rows object could be nil
+	defer rows.Close()
+
+	snippets := Snippets{}
+
+	for rows.Next() {
+		s := &Snippet{}
+		err := rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		if err != nil {
+			return nil, err
+		}
+		snippets = append(snippets, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return snippets, nil
+
+}
+
 // GetSnippet ...
 func (db *Database) GetSnippet(id int) (*Snippet, error) {
 
-	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > CURRENT_DATE AND id = $1`
+	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > CURRENT_TIMESTAMP AND id = $1`
 
 	row := db.QueryRow(stmt, id)
 
@@ -112,7 +152,7 @@ func (db *Database) InsertUser(name, email, password string) error {
 		return err
 	}
 
-	stmt := "INSERT INTO users (name, email, password, created) VALUES ($1, $2, $3, CURRENT_DATE)"
+	stmt := "INSERT INTO users (name, email, password, created) VALUES ($1, $2, $3, CURRENT_TIMESTAMP)"
 
 	_, err = db.Exec(stmt, name, email, string(hashedPassword))
 

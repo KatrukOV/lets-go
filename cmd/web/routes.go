@@ -15,13 +15,16 @@ func (app *App) Routes() http.Handler {
 
 	mux.Get("/", NoSurf(app.Home))
 	mux.Get("/snippet/new", app.RequireLogin(NoSurf(app.NewSnippet)))
+	mux.Get("/snippets", NoSurf(app.AllSnippets))
 	mux.Post("/snippet/new", app.RequireLogin(NoSurf(app.CreateSnippet)))
 	mux.Get("/snippet/:id", NoSurf(app.ShowSnippet))
 
 	// Application Routes [User]
+	mux.Post("/users", http.HandlerFunc(app.CreateUser))
+	mux.Post("/sessions", http.HandlerFunc(app.LoginUser))
 	mux.Get("/user/signup", NoSurf(app.SignupUser))
-	mux.Post("/user/signup", NoSurf(app.CreateUser))
-	mux.Get("/user/login", NoSurf(app.LoginUser))
+	mux.Post("/user/signup", NoSurf(app.Signup))
+	mux.Get("/user/login", NoSurf(app.Signin))
 	mux.Post("/user/login", NoSurf(app.VerifyUser))
 	mux.Post("/user/logout", app.RequireLogin(NoSurf(app.LogoutUser)))
 
@@ -30,4 +33,5 @@ func (app *App) Routes() http.Handler {
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 
 	return LogRequest(SecureHeaders(mux))
+
 }
