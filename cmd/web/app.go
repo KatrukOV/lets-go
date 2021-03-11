@@ -11,7 +11,7 @@ import (
 // to it as our build progresses.
 type App struct {
 	Addr      string
-	Database  *models.Database
+	Database  models.Repo
 	HTMLDir   string
 	StaticDir string
 	Sessions  *scs.Manager
