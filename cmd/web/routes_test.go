@@ -7,12 +7,12 @@ import (
 	"testing"
 )
 
-// Get all Snippets ...
-func AllSnippets(t *testing.T) {
+// Test route of get all Snippets ...
+func Test_route_AllSnippets(t *testing.T) {
 	t.Parallel()
 
 	app := App{Database: &models.MockDatabase{}}
-	hendler := http.HandlerFunc(app.AllSnippets)
+	handler := http.HandlerFunc(app.AllSnippets)
 
 	request, err := http.NewRequest("GET", "/snippets?offset=0&limit=2", nil)
 	if err != nil {
@@ -21,7 +21,7 @@ func AllSnippets(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	hendler.ServeHTTP(w, request)
+	handler.ServeHTTP(w, request)
 	if w.Code != http.StatusOK {
 		t.Fatalf("Wrong code %v", w.Code)
 	}

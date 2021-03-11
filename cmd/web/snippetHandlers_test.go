@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Get all Snippets ...
+// Test handler Of get all Snippets ...
 func Test_AllSnippets(t *testing.T) {
 	t.Parallel()
 
