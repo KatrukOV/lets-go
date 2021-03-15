@@ -17,7 +17,7 @@ func (app *App) Home(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	snippets, err := app.Database.GetUpTo10LatestSnippets()
+	snippets, err := app.Repo.GetUpTo10LatestSnippets()
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -40,7 +40,7 @@ func (app *App) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippet, err := app.Database.GetSnippet(id)
+	snippet, err := app.Repo.GetSnippet(id)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -96,7 +96,7 @@ func (app *App) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.Database.InsertSnippet(form.Title, form.Content, form.Expires)
+	id, err := app.Repo.InsertSnippet(form.Title, form.Content, form.Expires)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -125,7 +125,7 @@ func (app *App) AllSnippets(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.ParseInt(limitStr[0], 10, 64)
 	offset, _ := strconv.ParseInt(offsetStr[0], 10, 64)
 
-	snippets, err := app.Database.GetAllSnippets(limit, offset)
+	snippets, err := app.Repo.GetAllSnippets(limit, offset)
 
 	if err != nil {
 		app.ServerError(w, err)

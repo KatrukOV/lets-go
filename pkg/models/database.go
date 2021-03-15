@@ -13,15 +13,6 @@ var (
 	ErrInvalidCredentials = errors.New("models: invalid user credentials")
 )
 
-type Repo interface {
-	InsertSnippet(title, content, expires string) (int, error)
-	GetUpTo10LatestSnippets() (Snippets, error)
-	GetAllSnippets(limit, offset int64) (Snippets, error)
-	GetSnippet(id int) (*Snippet, error)
-	InsertUser(name, email, password string) error
-	VerifyUser(email, password string) (int, error)
-}
-
 // Database ...
 type Database struct {
 	*sql.DB

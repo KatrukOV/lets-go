@@ -33,7 +33,7 @@ func main() {
 
 	// Initialize a new instance of App containing the dependencies.
 	app := &App{
-		Database:  &models.Database{db},
+		Repo:      &models.Database{db},
 		HTMLDir:   *htmlDir,
 		StaticDir: *staticDir,
 		Sessions:  sessionManager,

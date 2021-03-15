@@ -35,7 +35,7 @@ func (app *App) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.Database.InsertUser(form.Name, form.Email, form.Password)
+	err = app.Repo.InsertUser(form.Name, form.Email, form.Password)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -66,7 +66,7 @@ func (app *App) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.Database.InsertUser(user.Name, user.Email, user.Password)
+	err = app.Repo.InsertUser(user.Name, user.Email, user.Password)
 
 	if err != nil {
 		app.ServerError(w, err)
@@ -89,7 +89,7 @@ func (app *App) LoginUser(w http.ResponseWriter, r *http.Request) {
 		app.ClientError(w, http.StatusUnprocessableEntity)
 		return
 	}
-	_, err1 := app.Database.VerifyUser(userLogin.Email, userLogin.Password)
+	_, err1 := app.Repo.VerifyUser(userLogin.Email, userLogin.Password)
 
 	if err1 != nil {
 		app.ClientError(w, http.StatusAccepted)
@@ -137,7 +137,7 @@ func (app *App) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUserID, err := app.Database.VerifyUser(form.Email, form.Password)
+	currentUserID, err := app.Repo.VerifyUser(form.Email, form.Password)
 
 	if err == models.ErrInvalidCredentials {
 		form.Failures["Generic"] = "Email or Password is incorrect"
