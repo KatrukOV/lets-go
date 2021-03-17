@@ -3,12 +3,16 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/andrii-minchekov/lets-go/api"
 	"log"
+	"net"
 	"time"
 
 	"github.com/alexedwards/scs"
 	"github.com/andrii-minchekov/lets-go/pkg/models"
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -43,6 +47,19 @@ func main() {
 	}
 
 	app.RunServer()
+
+	listener, err := net.Listen("tcp", ":8083")
+	if err != nil {
+		log.Fatal(err)
+	}
+	server := grpc.NewServer()
+	service := &ServiceGrpc{}
+	api.RegisterSnippetServiceServer(server, service)
+	reflection.Register(server)
+	if err := server.Serve(listener); err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func connect(dsn string) *sql.DB {

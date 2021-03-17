@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package lets.go;
+
+option go_package = "api";
+
+service SnippetService {
+    rpc ReadSnippets(PageRequest) returns (ReadSnippetsResponse);
+}
+
+message PageRequest {
+    int64 limit = 1;
+    int64 offset = 2;
+}
+
+message ReadSnippetsResponse {
+    repeated Snippet snippets = 1;
+}
+
+message Snippet {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+    string created = 4;
+    string expires = 5;
+}
